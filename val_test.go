@@ -164,3 +164,17 @@ func TestEmail(t *testing.T) {
 	}
 
 }
+
+func TestIn(t *testing.T) {
+
+	var testValIn struct {
+		Test string `json:"special" validate:"in:admin,user,other" `
+	}
+
+	testJSON := jsonFactory(`{"special": "admin"}`)
+
+	if err := Guaranty(&testValIn, testJSON); err != nil {
+		t.Error(err)
+	}
+
+}

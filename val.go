@@ -65,13 +65,18 @@ func validate(obj interface{}) error {
 
 			// Do the hard work of checking all assertions
 			for setting := range array {
-				switch array[setting] {
-				case "required":
+				match := array[setting]
+				switch {
+				case "required" == match:
 					if err := required(field, fieldValue, zero); err != nil {
 						return err
 					}
-				case "email":
-					if err := email(field, fieldValue); err != nil {
+				case "email" == match:
+					if err := email(fieldValue); err != nil {
+						return err
+					}
+				case "in:" == match[0:3]:
+					if err := in(match, fieldValue); err != nil {
 						return err
 					}
 				default:
@@ -101,7 +106,7 @@ func required(field reflect.StructField, value, zero interface{}) error {
 }
 
 // Check that the passed in field is a valid email
-func email(field reflect.StructField, value interface{}) error {
+func email(value interface{}) error {
 	// Email Regex Checker
 	var emailRegex string = `^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`
 
@@ -114,4 +119,25 @@ func email(field reflect.StructField, value interface{}) error {
 	} else {
 		return errors.New("Email was not able to convert the passed in data to a []byte.")
 	}
+}
+
+// Check that the passed in field is a valid email
+// Need to improve error logging for this method
+func in(field string, value interface{}) error {
+
+	if data, ok := value.(string); ok {
+		valid := strings.Split(field[3:], ",")
+
+		for option := range valid {
+			if valid[option] == data {
+				return nil
+			}
+		}
+
+		return errors.New("In did not match any of the expected values.")
+
+	} else {
+		return errors.New("in, was not able to convert the data passed in to a string.")
+	}
+
 }
