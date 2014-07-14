@@ -177,4 +177,34 @@ func TestIn(t *testing.T) {
 		t.Error(err)
 	}
 
+	var testValIn2 struct {
+		Test int `json:"special" validate:"in:1,3,2" `
+	}
+
+	testJSON = jsonFactory(`{"special": 3}`)
+
+	if err := Guaranty(&testValIn2, testJSON); err != nil {
+		t.Error(err)
+	}
+
+	var testValIn3 struct {
+		Test int `json:"special" validate:"in:1,3,2" `
+	}
+
+	testJSON = jsonFactory(`{"special": 6}`)
+
+	if err := Guaranty(&testValIn3, testJSON); err == nil {
+		t.Error("6 is not in validate in call, err should not have been nil.")
+	}
+
+	var testValIn4 struct {
+		Test int `json:"special" validate:"in:1,3,2" `
+	}
+
+	testJSON = jsonFactory(`{"what": "fake"}`)
+
+	if err := Guaranty(&testValIn4, testJSON); err == nil {
+		t.Error("JSON not related to validation passed in error should not be null.")
+	}
+
 }

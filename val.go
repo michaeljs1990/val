@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -65,7 +66,9 @@ func validate(obj interface{}) error {
 
 			// Do the hard work of checking all assertions
 			for setting := range array {
+
 				match := array[setting]
+
 				switch {
 				case "required" == match:
 					if err := required(field, fieldValue, zero); err != nil {
@@ -123,14 +126,31 @@ func email(value interface{}) error {
 
 // Check that the passed in field is a valid email
 // Need to improve error logging for this method
+// Currently only supports strings, ints
 func in(field string, value interface{}) error {
 
 	if data, ok := value.(string); ok {
+
 		valid := strings.Split(field[3:], ",")
 
 		for option := range valid {
 			if valid[option] == data {
 				return nil
+			}
+		}
+
+		return errors.New("In did not match any of the expected values.")
+
+	} else if data, ok := value.(int); ok {
+		// This will run with passed in data is an int
+		valid := strings.Split(field[3:], ",")
+
+		for option := range valid {
+			// Check for convertion to valid int
+			if valint, err := strconv.ParseInt(valid[option], 0, 64); err == nil {
+				if valint == int64(data) {
+					return nil
+				}
 			}
 		}
 
