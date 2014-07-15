@@ -309,7 +309,7 @@ func TestDigitBetween(t *testing.T) {
 		Test int `json:"digit" validate:"digits_between:0,1" `
 	}
 
-	testJSON := jsonFactory(`{"digit": 1234564}`)
+	testJSON = jsonFactory(`{"digit": 1234564}`)
 
 	if err := Guaranty(&testValDigit3, testJSON); err == nil {
 		t.Error(err)
