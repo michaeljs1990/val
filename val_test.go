@@ -16,7 +16,7 @@ func jsonFactory(s string) io.ReadCloser {
 // Ensure all required fields are matching
 func TestRequired(t *testing.T) {
 
-	// Test if STRING required is valid
+	// // Test if STRING required is valid
 	var testString struct {
 		Test string `json:"something" validate:"required" `
 	}
@@ -163,8 +163,21 @@ func TestEmail(t *testing.T) {
 		t.Error("Email test failed, michaeljs.edu passed as a valid email.")
 	}
 
+	// This should not return an error since email is not required.
+	var testValEmail4 struct {
+		Test string `json:"email" validate:"email" `
+	}
+
+	testJSON = jsonFactory(`{"jeff": "really"}`)
+
+	if err := Guaranty(&testValEmail4, testJSON); err != nil {
+		t.Error(err)
+	}
+
 }
 
+// Ensure In is matching properly
+// Supporting string and int currently
 func TestIn(t *testing.T) {
 
 	var testValIn struct {
@@ -198,13 +211,38 @@ func TestIn(t *testing.T) {
 	}
 
 	var testValIn4 struct {
-		Test int `json:"special" validate:"in:1,3,2" `
+		Test2 string `json:"what" validate:in:this,that`
+		Test  int    `json:"special" validate:"in:1,3,2" `
 	}
 
-	testJSON = jsonFactory(`{"what": "fake"}`)
+	testJSON = jsonFactory(`{"special": 3,"what": "this"}`)
 
-	if err := Guaranty(&testValIn4, testJSON); err == nil {
-		t.Error("JSON not related to validation passed in error should not be null.")
+	if err := Guaranty(&testValIn4, testJSON); err != nil {
+		t.Error(err)
 	}
 
+	var testValIn5 struct {
+		Test2 string `json:"what" validate:in:this,that`
+		Test  int    `json:"special" validate:"in:1,3,2" `
+	}
+
+	testJSON = jsonFactory(`{"special": 3}`)
+
+	if err := Guaranty(&testValIn5, testJSON); err != nil {
+		t.Error(err)
+	}
+
+	var testValIn6 struct {
+		Test2 string `json:"what" validate:"in:this,that"`
+		Test3 string `json:"what1" validate:"in:this,then"`
+		Test4 string `json:"what2" validate:"in:this,that"`
+		Test5 string `json:"what3" validate:"in:this,that"`
+		Test  int    `json:"special" validate:"in:1,3,2"`
+	}
+
+	testJSON = jsonFactory(`{"sa": 34, "what":"this", "what1":"then", "what2":"this"}`)
+
+	if err := Guaranty(&testValIn6, testJSON); err != nil {
+		t.Error(err)
+	}
 }

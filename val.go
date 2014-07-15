@@ -75,12 +75,16 @@ func validate(obj interface{}) error {
 						return err
 					}
 				case "email" == match:
-					if err := email(fieldValue); err != nil {
-						return err
+					if !reflect.DeepEqual(zero, fieldValue) {
+						if err := email(fieldValue); err != nil {
+							return err
+						}
 					}
 				case "in:" == match[0:3]:
-					if err := in(match, fieldValue); err != nil {
-						return err
+					if !reflect.DeepEqual(zero, fieldValue) {
+						if err := in(match, fieldValue); err != nil {
+							return err
+						}
 					}
 				default:
 					// Temp logging to check for errors
