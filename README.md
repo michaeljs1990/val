@@ -24,35 +24,36 @@ import "github.com/michaeljs1990/val"
 #### Basic example
 
 ```go
-  
-  import (
-    "fmt"
-    "net/http"
-    "github.com/michaeljs1990/val"
-  )
+package main
 
-  func handler(w http.ResponseWriter, r *http.Request) {
-  
-    var Register struct {
-    		Username string   `json:"username" validate:"required"`
-    		Password string   `json:"username" validate:"required"`
-    		Email    string   `json:"username" validate:"required|email"`
-    		Notify   string   `json:"username" validate:"required|in:yes,no"`
-    }
-    
-    if err := val.Guaranty(&Register, r.Body); err != nil {
-  			fmt.Println(err)
-  	} else {
-  	    fmt.Println("This validated!")
-  	}
-  	
-  }
-  
-  func main() {
-    http.HandleFunc("/", handler)
-    http.ListenAndServe(":8080", nil)
-  }
-  
+import (
+	"fmt"
+	"github.com/michaeljs1990/val"
+	"net/http"
+)
+
+func handler(w http.ResponseWriter, r *http.Request) {
+
+	var Register struct {
+		Username string `json:"username" validate:"required"`
+		Password string `json:"username" validate:"required"`
+		Email    string `json:"username" validate:"required|email"`
+		Notify   string `json:"username" validate:"required|in:yes,no"`
+	}
+
+	if err := val.Guaranty(&Register, r.Body); err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println("This validated!")
+	}
+
+}
+
+func main() {
+	http.HandleFunc("/", handler)
+	http.ListenAndServe(":8080", nil)
+}
+
 ```
 
 ## Currently Supported Validation
