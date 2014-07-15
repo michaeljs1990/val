@@ -246,3 +246,73 @@ func TestIn(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+// Check if the entered JSON is a data matching the one in a string.
+func TestDigit(t *testing.T) {
+
+	var testValDigit struct {
+		Test int `json:"digit" validate:"digit:5" `
+	}
+
+	testJSON := jsonFactory(`{"digit": 12345}`)
+
+	if err := Guaranty(&testValDigit, testJSON); err != nil {
+		t.Error(err)
+	}
+
+	var testValDigit2 struct {
+		Test int `json:"digit" validate:"digit:5" `
+	}
+
+	testJSON = jsonFactory(`{"digit": 123456}`)
+
+	if err := Guaranty(&testValDigit2, testJSON); err == nil {
+		t.Error("Error should have been thrown, digits should be 5 but was 6.")
+	}
+
+	var testValDigit3 struct {
+		Test int `json:"digit" validate:"digit:12" `
+	}
+
+	testJSON = jsonFactory(`{"digit": 111111111111}`)
+
+	if err := Guaranty(&testValDigit3, testJSON); err != nil {
+		t.Error(err)
+	}
+
+}
+
+// Check if the entered JSON is a data matching the one in a string.
+func TestDigitBetween(t *testing.T) {
+
+	var testValDigit struct {
+		Test int `json:"digit" validate:"digits_between:5,7" `
+	}
+
+	testJSON := jsonFactory(`{"digit": 123456}`)
+
+	if err := Guaranty(&testValDigit, testJSON); err != nil {
+		t.Error(err)
+	}
+
+	var testValDigit2 struct {
+		Test int `json:"digit" validate:"digits_between:0,10" `
+	}
+
+	testJSON = jsonFactory(`{"digit": 1234564}`)
+
+	if err := Guaranty(&testValDigit2, testJSON); err != nil {
+		t.Error("Error should have been thrown, digit was not between 0 and 10.")
+	}
+
+	var testValDigit3 struct {
+		Test int `json:"digit" validate:"digits_between:0,1" `
+	}
+
+	testJSON := jsonFactory(`{"digit": 1234564}`)
+
+	if err := Guaranty(&testValDigit3, testJSON); err == nil {
+		t.Error(err)
+	}
+
+}

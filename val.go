@@ -14,6 +14,7 @@ import (
 
 // Unpack JSON and call the validate function if no
 // errors are found when unpacking it.
+// Look into ReadAll http://jmoiron.net/blog/crossing-streams-a-love-letter-to-ioreader/
 func Guaranty(obj interface{}, input io.ReadCloser) error {
 	if b, err := ioutil.ReadAll(input); err == nil && string(b) != "{}" && string(b) != "" {
 		// Turn our string back into a io.Reader if it's valid
@@ -83,6 +84,18 @@ func validate(obj interface{}) error {
 				case "in:" == match[0:3]:
 					if !reflect.DeepEqual(zero, fieldValue) {
 						if err := in(match, fieldValue); err != nil {
+							return err
+						}
+					}
+				case "digit:" == match[0:6]:
+					if !reflect.DeepEqual(zero, fieldValue) {
+						if err := digit(match, fieldValue); err != nil {
+							return err
+						}
+					}
+				case "digits_between:" == match[0:15]:
+					if !reflect.DeepEqual(zero, fieldValue) {
+						if err := digits_between(match, fieldValue); err != nil {
 							return err
 						}
 					}
@@ -164,4 +177,51 @@ func in(field string, value interface{}) error {
 		return errors.New("in, was not able to convert the data passed in to a string.")
 	}
 
+}
+
+// Check that the passed in field is exactly X digits
+func digit(field string, value interface{}) error {
+
+	if data, ok := value.(int); ok {
+		// Unpack number of digits it should be.
+		digit := field[6:]
+
+		if digits, check := strconv.ParseInt(digit, 0, 64); check == nil {
+
+			if int64(len(strconv.FormatInt(int64(data), 10))) == digits {
+				return nil
+			} else {
+				return errors.New("The data you passed in was not the right number of digits.")
+			}
+
+		} else {
+			return errors.New("Digit must check for a number.")
+		}
+	}
+
+	return errors.New("The number passed into digit was not an int.")
+}
+
+func digits_between(field string, value interface{}) error {
+
+	if data, ok := value.(int); ok {
+
+		digit := strings.Split(field[15:], ",")
+
+		if digitSmall, ok := strconv.ParseInt(digit[0], 0, 64); ok == nil {
+
+			if digitLarge, okk := strconv.ParseInt(digit[1], 0, 64); okk == nil {
+
+				num := int64(len(strconv.FormatInt(int64(data), 10)))
+
+				if num >= digitSmall && num <= digitLarge {
+					return nil
+				} else {
+					return errors.New("The data you passed in was not the right number of digits.")
+				}
+			}
+		}
+	}
+
+	return errors.New("The value passed into digits_between could not be converted to an int.")
 }
