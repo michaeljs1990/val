@@ -36,9 +36,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	var Register struct {
 		Username string `json:"username" validate:"required"`
-		Password string `json:"username" validate:"required"`
-		Email    string `json:"username" validate:"required|email"`
-		Notify   string `json:"username" validate:"required|in:yes,no"`
+		Password string `json:"password" validate:"required"`
+		Email    string `json:"email" validate:"required|email"`
+		Notify   string `json:"notification" validate:"required|in:yes,no"`
 	}
 
 	if err := val.Guaranty(&Register, r.Body); err != nil {
