@@ -101,6 +101,24 @@ Digit between checks to make sure the data passed in will be between the two ent
 Username string   `json:"username" validate:"digits_between:0,10"`
 ```
 
+#### min
+Min works with ints and ensures that the number the user has entered is not under the specified min. If the number is under it will return an error.
+```
+Username string   `json:"username" validate:"min:10"`
+```
+
+#### max
+Max works with ints and ensures that the number the user has entered is not over the specified max. If the number is over it will return an error.
+```
+Username string   `json:"username" validate:"max:243"`
+```
+
+#### regex
+Regex ensures that the string the user has passed in matched the regex you have entered. Currently this is only tested with strings.
+```
+Username string   `json:"username" validate:"regex:\d+"`
+```
+
 #### combinations
 If you would like to ensure multiple conditions are met simply use the | character.
 ```
