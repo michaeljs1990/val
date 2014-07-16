@@ -56,6 +56,19 @@ func main() {
 
 ```
 
+## Performance
+I have created some benchmarks to see what really needs to be improved. Currently the benchmarks run 100,000 times and the performace is as follows. Below shows that email is an expensive call due to the non-optimized regex lib in go. Hopefully this will be improved over time. Other than that I am fairly happy with the current benchmarks. They would most likely be even a bit lower since on an http server you would not have to call a function every iteration to turn a string into a io.ReadCloser.
+
+```
+val general test took: 3.9868245s to run.
+val email test took: 3.4394378s to run.
+val in test took: 710.5219ms to run.
+val required test took: 697.4779ms to run.
+val digit int test took: 715.5054ms to run.
+val digit string test took: 688.5059ms to run.
+
+```
+
 ## Currently Supported Validation
 
 #### required
