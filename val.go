@@ -81,21 +81,39 @@ func validate(obj interface{}) error {
 							return err
 						}
 					}
-				case "in:" == match[0:3]:
-					if !reflect.DeepEqual(zero, fieldValue) {
-						if err := in(match, fieldValue); err != nil {
-							return err
-						}
-					}
-				case "digit:" == match[0:6]:
+				case strings.Contains(match, "digit:"):
 					if !reflect.DeepEqual(zero, fieldValue) {
 						if err := digit(match, fieldValue); err != nil {
 							return err
 						}
 					}
-				case "digits_between:" == match[0:15]:
+				case strings.Contains(match, "digits_between:"):
 					if !reflect.DeepEqual(zero, fieldValue) {
 						if err := digits_between(match, fieldValue); err != nil {
+							return err
+						}
+					}
+				case strings.Contains(match, "min:"):
+					if !reflect.DeepEqual(zero, fieldValue) {
+						if err := min(match, fieldValue); err != nil {
+							return err
+						}
+					}
+				case strings.Contains(match, "max:"):
+					if !reflect.DeepEqual(zero, fieldValue) {
+						if err := max(match, fieldValue); err != nil {
+							return err
+						}
+					}
+				case strings.Contains(match, "in:"):
+					if !reflect.DeepEqual(zero, fieldValue) {
+						if err := in(match, fieldValue); err != nil {
+							return err
+						}
+					}
+				case strings.Contains(match, "regex:"):
+					if !reflect.DeepEqual(zero, fieldValue) {
+						if err := regex(match, fieldValue); err != nil {
 							return err
 						}
 					}
@@ -224,4 +242,59 @@ func digits_between(field string, value interface{}) error {
 	}
 
 	return errors.New("The value passed into digits_between could not be converted to an int.")
+}
+
+func min(field string, value interface{}) error {
+
+	if data, ok := value.(int); ok {
+
+		min := field[4:]
+
+		if minNum, ok := strconv.ParseInt(min, 0, 64); ok == nil {
+
+			if int64(data) >= minNum {
+				return nil
+			} else {
+				return errors.New("The data you passed in was smaller then the allowed minimum.")
+			}
+
+		}
+	}
+
+	return errors.New("The value passed into min could not be converted to an int.")
+}
+
+func max(field string, value interface{}) error {
+
+	if data, ok := value.(int); ok {
+
+		max := field[4:]
+
+		if maxNum, ok := strconv.ParseInt(max, 0, 64); ok == nil {
+			if int64(data) <= maxNum {
+				return nil
+			} else {
+				return errors.New("The data you passed in was larger than the maximum.")
+			}
+
+		}
+	}
+
+	return errors.New("The value passed into max could not be converted to an int.")
+}
+
+func regex(field string, value interface{}) error {
+	// Email Regex Checker
+
+	reg := field[6:]
+
+	if data, ok := value.(string); ok {
+		if match, err := regexp.Match(reg, []byte(data)); err == nil && match {
+			return nil
+		} else {
+			return errors.New("Your regex did not match or was not valid.")
+		}
+	} else {
+		return errors.New("Regex was not able to convert the passed in data to a string.")
+	}
 }

@@ -316,3 +316,93 @@ func TestDigitBetween(t *testing.T) {
 	}
 
 }
+
+// Check if the entered JSON is a data matching the one in a string.
+func TestMin(t *testing.T) {
+
+	var testValMin struct {
+		Test int `json:"digit" validate:"min:23" `
+	}
+
+	testJSON := jsonFactory(`{"digit": 24}`)
+
+	if err := Guaranty(&testValMin, testJSON); err != nil {
+		t.Error(err)
+	}
+
+	var testValMin2 struct {
+		Test int `json:"digit" validate:"min:20" `
+	}
+
+	testJSON = jsonFactory(`{"digit": 19}`)
+
+	if err := Guaranty(&testValMin2, testJSON); err == nil {
+		t.Error("Min was 20 digit of 19 should not have validated properly.")
+	}
+
+	var testValMin3 struct {
+		Test int `json:"digit" validate:"min:20" `
+	}
+
+	testJSON = jsonFactory(`{"jeff":"greg"}`)
+
+	if err := Guaranty(&testValMin3, testJSON); err != nil {
+		t.Error("Nothing was entered but min was not required. No error should be thrown.")
+	}
+}
+
+func TestMax(t *testing.T) {
+
+	var testValMin struct {
+		Test int `json:"digit" validate:"max:23" `
+	}
+
+	testJSON := jsonFactory(`{"digit": 23}`)
+
+	if err := Guaranty(&testValMin, testJSON); err != nil {
+		t.Error(err)
+	}
+
+	var testValMin2 struct {
+		Test int `json:"digit" validate:"max:20" `
+	}
+
+	testJSON = jsonFactory(`{"digit": 21}`)
+
+	if err := Guaranty(&testValMin2, testJSON); err == nil {
+		t.Error("Max was 20 digit of 21 should not have validated properly.")
+	}
+
+	var testValMin3 struct {
+		Test int `json:"digit" validate:"max:20" `
+	}
+
+	testJSON = jsonFactory(`{"jeff":"greg"}`)
+
+	if err := Guaranty(&testValMin3, testJSON); err != nil {
+		t.Error("Nothing was entered but max was not required. No error should be thrown.")
+	}
+}
+
+func TestRegex(t *testing.T) {
+
+	var testValDigit struct {
+		Test int `json:"digit" validate:"regex:\d+" `
+	}
+
+	testJSON := jsonFactory(`{"digit": 23}`)
+
+	if err := Guaranty(&testValDigit, testJSON); err != nil {
+		t.Error(err)
+	}
+
+	var testValDigit2 struct {
+		Test int `json:"digit" validate:"regex:\d+" `
+	}
+
+	testJSON = jsonFactory(`{"digit": 2dsa3}`)
+
+	if err := Guaranty(&testValDigit2, testJSON); err == nil {
+		t.Error("\\d+ regex should not match the string 2dsa3.")
+	}
+}
