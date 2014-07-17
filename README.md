@@ -116,7 +116,7 @@ Username string   `json:"username" validate:"max:243"`
 #### regex
 Regex ensures that the string the user has passed in matched the regex you have entered. Currently this is only tested with strings.
 ```
-Username string   `json:"username" validate:"regex:\d+"`
+Username string   `json:"username" validate:"regex:\\d+"`
 ```
 
 #### combinations
