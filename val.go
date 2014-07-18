@@ -15,13 +15,13 @@ import (
 // Unpack JSON and call the validate function if no
 // errors are found when unpacking it.
 // Look into ReadAll http://jmoiron.net/blog/crossing-streams-a-love-letter-to-ioreader/
-func Guaranty(obj interface{}, input io.ReadCloser) error {
+func Bind(input io.ReadCloser, obj interface{}) error {
 	if b, err := ioutil.ReadAll(input); err == nil && string(b) != "{}" && string(b) != "" {
 		// Turn our string back into a io.Reader if it's valid
 		decoder := json.NewDecoder(bytes.NewReader(b))
 
 		if err := decoder.Decode(obj); err == nil {
-			return validate(obj)
+			return Validate(obj)
 		} else {
 			return err
 		}
@@ -32,10 +32,7 @@ func Guaranty(obj interface{}, input io.ReadCloser) error {
 	}
 }
 
-// validate handles ensuting that all passed in values
-// are safe to use before calling out to other functions
-// to ensure the proper validation and type
-func validate(obj interface{}) error {
+func Validate(obj interface{}) error {
 
 	typ := reflect.TypeOf(obj)
 	value := reflect.ValueOf(obj)
@@ -56,14 +53,19 @@ func validate(obj interface{}) error {
 		// Validate nested and embedded structs (if pointer, only do so if not nil)
 		if field.Type.Kind() == reflect.Struct ||
 			(field.Type.Kind() == reflect.Ptr && !reflect.DeepEqual(zero, fieldValue)) {
-			if err := validate(fieldValue); err != nil {
+			if err := Validate(fieldValue); err != nil {
 				return err
 			}
 		}
 
-		if field.Tag.Get("validate") != "" {
+		if field.Tag.Get("validate") != "" || field.Tag.Get("binding") != "" {
 			// Break validate field into array
 			array := strings.Split(field.Tag.Get("validate"), "|")
+
+			// Legacy Support for binding.
+			if array[0] == "" {
+				array = strings.Split(field.Tag.Get("binding"), "|")
+			}
 
 			// Do the hard work of checking all assertions
 			for setting := range array {
@@ -76,50 +78,27 @@ func validate(obj interface{}) error {
 						return err
 					}
 				case "email" == match:
-					if !reflect.DeepEqual(zero, fieldValue) {
-						if err := email(fieldValue); err != nil {
-							return err
-						}
+					if err := regex(`regex:^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`, fieldValue); err != nil {
+						return err
 					}
-				case strings.Contains(match, "digit:"):
-					if !reflect.DeepEqual(zero, fieldValue) {
-						if err := digit(match, fieldValue); err != nil {
-							return err
-						}
+				case strings.HasPrefix(match, "min:"):
+					if err := min(match, fieldValue); err != nil {
+						return err
 					}
-				case strings.Contains(match, "digits_between:"):
-					if !reflect.DeepEqual(zero, fieldValue) {
-						if err := digits_between(match, fieldValue); err != nil {
-							return err
-						}
+				case strings.HasPrefix(match, "max:"):
+					if err := max(match, fieldValue); err != nil {
+						return err
 					}
-				case strings.Contains(match, "min:"):
-					if !reflect.DeepEqual(zero, fieldValue) {
-						if err := min(match, fieldValue); err != nil {
-							return err
-						}
+				case strings.HasPrefix(match, "in:"):
+					if err := in(match, fieldValue); err != nil {
+						return err
 					}
-				case strings.Contains(match, "max:"):
-					if !reflect.DeepEqual(zero, fieldValue) {
-						if err := max(match, fieldValue); err != nil {
-							return err
-						}
-					}
-				case strings.Contains(match, "in:"):
-					if !reflect.DeepEqual(zero, fieldValue) {
-						if err := in(match, fieldValue); err != nil {
-							return err
-						}
-					}
-				case strings.Contains(match, "regex:"):
-					if !reflect.DeepEqual(zero, fieldValue) {
-						if err := regex(match, fieldValue); err != nil {
-							return err
-						}
+				case strings.HasPrefix(match, "regex:"):
+					if err := regex(match, fieldValue); err != nil {
+						return err
 					}
 				default:
-					// Temp logging to check for errors
-					errors.New(array[setting] + " is not a valid validation type.")
+					panic("The field " + match + " is not a valid validation check.")
 				}
 			}
 		}
@@ -144,27 +123,14 @@ func required(field reflect.StructField, value, zero interface{}) error {
 }
 
 // Check that the passed in field is a valid email
-func email(value interface{}) error {
-	// Email Regex Checker
-	var emailRegex string = `^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`
-
-	if data, ok := value.(string); ok {
-		if match, _ := regexp.Match(emailRegex, []byte(data)); match {
-			return nil
-		} else {
-			return errors.New("A valid email address was not entered.")
-		}
-	} else {
-		return errors.New("Email was not able to convert the passed in data to a []byte.")
-	}
-}
-
-// Check that the passed in field is a valid email
 // Need to improve error logging for this method
 // Currently only supports strings, ints
 func in(field string, value interface{}) error {
 
 	if data, ok := value.(string); ok {
+		if len(data) == 0 {
+			return nil
+		}
 
 		valid := strings.Split(field[3:], ",")
 
@@ -174,81 +140,18 @@ func in(field string, value interface{}) error {
 			}
 		}
 
-		return errors.New("In did not match any of the expected values.")
-
-	} else if data, ok := value.(int); ok {
-		// This will run with passed in data is an int
-		valid := strings.Split(field[3:], ",")
-
-		for option := range valid {
-			// Check for convertion to valid int
-			if valint, err := strconv.ParseInt(valid[option], 0, 64); err == nil {
-				if valint == int64(data) {
-					return nil
-				}
-			}
-		}
-
-		return errors.New("In did not match any of the expected values.")
-
 	} else {
-		return errors.New("in, was not able to convert the data passed in to a string.")
+		return errors.New("The value passed in for IN could not be converted to a string.")
 	}
 
-}
-
-// Check that the passed in field is exactly X digits
-func digit(field string, value interface{}) error {
-
-	if data, ok := value.(int); ok {
-		// Unpack number of digits it should be.
-		digit := field[6:]
-
-		if digits, check := strconv.ParseInt(digit, 0, 64); check == nil {
-
-			if int64(len(strconv.FormatInt(int64(data), 10))) == digits {
-				return nil
-			} else {
-				return errors.New("The data you passed in was not the right number of digits.")
-			}
-
-		} else {
-			return errors.New("Digit must check for a number.")
-		}
-	}
-
-	return errors.New("The number passed into digit was not an int.")
-}
-
-func digits_between(field string, value interface{}) error {
-
-	if data, ok := value.(int); ok {
-
-		digit := strings.Split(field[15:], ",")
-
-		if digitSmall, ok := strconv.ParseInt(digit[0], 0, 64); ok == nil {
-
-			if digitLarge, okk := strconv.ParseInt(digit[1], 0, 64); okk == nil {
-
-				num := int64(len(strconv.FormatInt(int64(data), 10)))
-
-				if num >= digitSmall && num <= digitLarge {
-					return nil
-				} else {
-					return errors.New("The data you passed in was not the right number of digits.")
-				}
-			}
-		}
-	}
-
-	return errors.New("The value passed into digits_between could not be converted to an int.")
+	return errors.New("In did not match any of the expected values.")
 }
 
 func min(field string, value interface{}) error {
 
 	if data, ok := value.(int); ok {
 
-		min := field[4:]
+		min := field[strings.Index(field, ":")+1:]
 
 		if minNum, ok := strconv.ParseInt(min, 0, 64); ok == nil {
 
@@ -261,14 +164,14 @@ func min(field string, value interface{}) error {
 		}
 	}
 
-	return errors.New("The value passed into min could not be converted to an int.")
+	return errors.New("The value passed in for MIN could not be converted to an int.")
 }
 
 func max(field string, value interface{}) error {
 
 	if data, ok := value.(int); ok {
 
-		max := field[4:]
+		max := field[strings.Index(field, ":")+1:]
 
 		if maxNum, ok := strconv.ParseInt(max, 0, 64); ok == nil {
 			if int64(data) <= maxNum {
@@ -280,21 +183,38 @@ func max(field string, value interface{}) error {
 		}
 	}
 
-	return errors.New("The value passed into max could not be converted to an int.")
+	return errors.New("The value passed in for MAX could not be converted to an int.")
 }
 
+// Regex handles the general regex call and also handles
+// the regex email.
 func regex(field string, value interface{}) error {
-	// Email Regex Checker
 
-	reg := field[6:]
+	reg := field[strings.Index(field, ":")+1:]
 
 	if data, ok := value.(string); ok {
-		if match, err := regexp.Match(reg, []byte(data)); err == nil && match {
+		if len(data) == 0 {
 			return nil
-		} else {
-			return errors.New("Your regex did not match or was not valid.")
+		} else if err := match_regex(reg, []byte(data)); err != nil {
+			return err
+		}
+	} else if data, ok := value.(int); ok {
+		if err := match_regex(reg, []byte(strconv.Itoa(data))); err != nil {
+			return err
 		}
 	} else {
-		return errors.New("Regex was not able to convert the passed in data to a string.")
+		return errors.New("The value passed in for REGEX could not be converted to a string or int.")
+	}
+
+	return nil
+}
+
+// Helper function for regex.
+func match_regex(reg string, data []byte) error {
+
+	if match, err := regexp.Match(reg, []byte(data)); err == nil && match {
+		return nil
+	} else {
+		return errors.New("Your regex did not match or was not valid.")
 	}
 }
