@@ -16,6 +16,7 @@ import (
 // errors are found when unpacking it.
 // Look into ReadAll http://jmoiron.net/blog/crossing-streams-a-love-letter-to-ioreader/
 func Bind(input io.ReadCloser, obj interface{}) error {
+	// Don't go through any logic if nothing was passed in.
 	if b, err := ioutil.ReadAll(input); err == nil && string(b) != "{}" && string(b) != "" {
 		// Turn our string back into a io.Reader if it's valid
 		decoder := json.NewDecoder(bytes.NewReader(b))
@@ -42,6 +43,12 @@ func Validate(obj interface{}) error {
 	if typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
 		value = value.Elem()
+	}
+
+	// Kill process if obj did not pass in a scruct.
+	// This happens when a pointer passed in.
+	if value.Kind() != reflect.Struct {
+		return nil
 	}
 
 	for i := 0; i < typ.NumField(); i++ {
@@ -71,6 +78,11 @@ func Validate(obj interface{}) error {
 			for setting := range array {
 
 				match := array[setting]
+
+				//Check that value was passed in and is not required.
+				if match != "required" && null(fieldValue) == true {
+					return nil
+				}
 
 				switch {
 				case "required" == match:
@@ -107,6 +119,15 @@ func Validate(obj interface{}) error {
 	return nil
 }
 
+// Ensure that the value being passed in is not of type nil.
+func null(value interface{}) bool {
+	if reflect.ValueOf(value).IsNil() {
+		return true
+	}
+
+	return false
+}
+
 // Check that the following function features
 // the required field. May need to check for
 // more special cases like since passing in null
@@ -127,15 +148,15 @@ func required(field reflect.StructField, value, zero interface{}) error {
 // Currently only supports strings, ints
 func in(field string, value interface{}) error {
 
-	if data, ok := value.(string); ok {
-		if len(data) == 0 {
+	if data, ok := value.(*string); ok {
+		if len(*data) == 0 {
 			return nil
 		}
 
 		valid := strings.Split(field[3:], ",")
 
 		for option := range valid {
-			if valid[option] == data {
+			if valid[option] == *data {
 				return nil
 			}
 		}
@@ -149,13 +170,13 @@ func in(field string, value interface{}) error {
 
 func min(field string, value interface{}) error {
 
-	if data, ok := value.(int); ok {
+	if data, ok := value.(*int); ok {
 
 		min := field[strings.Index(field, ":")+1:]
 
 		if minNum, ok := strconv.ParseInt(min, 0, 64); ok == nil {
 
-			if int64(data) >= minNum {
+			if int64(*data) >= minNum {
 				return nil
 			} else {
 				return errors.New("The data you passed in was smaller then the allowed minimum.")
@@ -169,12 +190,12 @@ func min(field string, value interface{}) error {
 
 func max(field string, value interface{}) error {
 
-	if data, ok := value.(int); ok {
+	if data, ok := value.(*int); ok {
 
 		max := field[strings.Index(field, ":")+1:]
 
 		if maxNum, ok := strconv.ParseInt(max, 0, 64); ok == nil {
-			if int64(data) <= maxNum {
+			if int64(*data) <= maxNum {
 				return nil
 			} else {
 				return errors.New("The data you passed in was larger than the maximum.")
@@ -192,14 +213,14 @@ func regex(field string, value interface{}) error {
 
 	reg := field[strings.Index(field, ":")+1:]
 
-	if data, ok := value.(string); ok {
-		if len(data) == 0 {
+	if data, ok := value.(*string); ok {
+		if len(*data) == 0 {
 			return nil
-		} else if err := match_regex(reg, []byte(data)); err != nil {
+		} else if err := match_regex(reg, []byte(*data)); err != nil {
 			return err
 		}
-	} else if data, ok := value.(int); ok {
-		if err := match_regex(reg, []byte(strconv.Itoa(data))); err != nil {
+	} else if data, ok := value.(*int); ok {
+		if err := match_regex(reg, []byte(strconv.Itoa(*data))); err != nil {
 			return err
 		}
 	} else {
