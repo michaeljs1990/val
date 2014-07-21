@@ -40,12 +40,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		Username *string `json:"username" validate:"required"`
 		Password *string `json:"password" validate:"required"`
 		Email    *string `json:"email" validate:"required|email"`
-		Notify   *string `json:"notification" validate:"required|in:yes,no"`
+		Notify   *string `json:"notify" validate:"required|in:yes,no"`
 	}
 
-	if err := val.Guaranty(&Register, r.Body); err != nil {
+	if err := val.Bind(r.Body, &Register); err != nil {
 		fmt.Println(err)
 	} else {
+		fmt.Println(*Register.Username)
 		fmt.Println("This validated!")
 	}
 
