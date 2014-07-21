@@ -8,7 +8,7 @@ Go JSON validation library.
 This library was developed to meet some validation needs that I needed. However I would like to build this into a much more robust set of tools. Please feel free to ask for any feature or submit a pull request.
 
 ## Start using it
-Run the following in your terminal to start using val
+Run the following in your terminal to start using val.
 
 ```
 go get github.com/michaeljs1990/val
@@ -17,6 +17,13 @@ Then import it in your Go! code:
 
 ```
 import "github.com/michaeljs1990/val"
+```
+
+## Update from an old version
+Run the following in your terminal to update val to the current master branch.
+
+```
+go get -u github.com/michaeljs1990/val
 ```
 
 ## Example Usage
