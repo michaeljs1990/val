@@ -109,6 +109,14 @@ func Validate(obj interface{}) error {
 					if err := regex(match, fieldValue); err != nil {
 						return err
 					}
+				case strings.HasPrefix(match, "length:"):
+					if err := length(match, fieldValue); err != nil {
+						return err
+					}
+				case strings.HasPrefix(match, "length_between:"):
+					if err := length_between(match, fieldValue); err != nil {
+						return err
+					}
 				default:
 					panic("The field " + match + " is not a valid validation check.")
 				}
@@ -237,5 +245,62 @@ func match_regex(reg string, data []byte) error {
 		return nil
 	} else {
 		return errors.New("Your regex did not match or was not valid.")
+	}
+}
+
+// Check passed in json length string is exact value passed in.
+// Also checks if passed in values is between two different ones.
+func length(field string, value interface{}) error {
+
+	length := field[strings.Index(field, ":")+1:]
+
+	if data, ok := value.(*string); ok {
+		if intdata, intok := strconv.Atoi(length); intok == nil {
+			if len(*data) == intdata {
+				return nil
+			} else {
+				return errors.New("The data passed in was not equal to the expected length.")
+			}
+		} else {
+			return errors.New("The value passed in for LENGTH could not be converted to an int.")
+		}
+	} else {
+		return errors.New("The value passed in for LENGTH could not be converted to a string.")
+	}
+}
+
+// Check if the strings length is between high,low.
+func length_between(field string, value interface{}) error {
+
+	length := field[strings.Index(field, ":")+1:]
+	vals := strings.Split(length, ",")
+
+	if len(vals) == 2 {
+
+		if data, ok := value.(*string); ok {
+
+			if lowerbound, lowok := strconv.Atoi(vals[0]); lowok == nil {
+
+				if upperbound, upok := strconv.Atoi(vals[1]); upok == nil {
+
+					if lowerbound <= len(*data) && upperbound >= len(*data) {
+						return nil
+					} else {
+						return errors.New("The value passed in for LENGTH BETWEEN was not in bounds.")
+					}
+
+				} else {
+					return errors.New("The value passed in for LENGTH BETWEEN could not be converted to an int.")
+				}
+
+			} else {
+				return errors.New("The value passed in for LENGTH BETWEEN could not be converted to an int.")
+			}
+
+		} else {
+			return errors.New("The value passed in for LENGTH BETWEEN could not be converted to a string.")
+		}
+	} else {
+		return errors.New("LENGTH BETWEEN requires exactly two paramaters.")
 	}
 }

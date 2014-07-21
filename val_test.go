@@ -360,3 +360,71 @@ func TestPointers(t *testing.T) {
 	}
 
 }
+
+func TestLength(t *testing.T) {
+
+	var testValLength struct {
+		Test *string `json:"username" validate:"length:5" `
+	}
+
+	req, _ := http.NewRequest("POST", "/", jsonFactory(`{"username": "aaaaa"}`))
+
+	if err := Bind(req.Body, &testValLength); err != nil {
+		t.Error(err)
+	}
+
+	var testValLength2 struct {
+		Test *string `json:"username" validate:"length:4" `
+	}
+
+	req, _ = http.NewRequest("POST", "/", jsonFactory(`{"username": "aaa"}`))
+
+	if err := Bind(req.Body, &testValLength2); err == nil {
+		t.Error("Value was passed in but did not match length of 4 error should have been returned.")
+	}
+
+	var testValLength3 struct {
+		Test *string `json:"username" validate:"length:23" `
+	}
+
+	req, _ = http.NewRequest("POST", "/", jsonFactory(`{"digit": "4"}`))
+
+	if err := Bind(req.Body, &testValLength3); err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestLengthBetween(t *testing.T) {
+
+	var testValLength struct {
+		Test *string `json:"username" validate:"length_between:5,10" `
+	}
+
+	req, _ := http.NewRequest("POST", "/", jsonFactory(`{"username": "aaaaaa"}`))
+
+	if err := Bind(req.Body, &testValLength); err != nil {
+		t.Error(err)
+	}
+
+	var testValLength2 struct {
+		Test *string `json:"username" validate:"length_between:4,5" `
+	}
+
+	req, _ = http.NewRequest("POST", "/", jsonFactory(`{"username": "aaa"}`))
+
+	if err := Bind(req.Body, &testValLength2); err == nil {
+		t.Error("Value was passed in but was not inbetween 4,5 should have returned error.")
+	}
+
+	var testValLength3 struct {
+		Test *string `json:"username" validate:"length_between:2,3" `
+	}
+
+	req, _ = http.NewRequest("POST", "/", jsonFactory(`{"digit": "4"}`))
+
+	if err := Bind(req.Body, &testValLength3); err != nil {
+		t.Error(err)
+	}
+
+}
