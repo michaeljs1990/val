@@ -118,13 +118,13 @@ Username *string   `json:"username" validate:"regex:\\d+"`
 ```
 
 #### length
-Regex ensures that the string the user has passed in matched the regex you have entered. Currently this is only tested with strings.
+Length ensures that the passed in string is equal to the length you have specified.
 ```
 Username *string   `json:"username" validate:"length:5"`
 ```
 
 #### length_between
-Regex ensures that the string the user has passed in matched the regex you have entered. Currently this is only tested with strings.
+Length between works much the same as length except it will return true if the number is equal to or inbetween the high and low bounds set.
 ```
 Username *string   `json:"username" validate:"length_between:2,5"`
 ```
