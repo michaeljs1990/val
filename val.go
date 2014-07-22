@@ -1,3 +1,28 @@
+/*
+This package allows for easy validation of passed in json.
+Val does not intend to be a robust solution but does seek to cover 95% of use cases.
+Val requires a structure to use pointers for validation. This may seem odd but if a pointer is
+not used you will run into some strange issues since json.Decode() will pass an int type back 
+set as 0 giving no way to tell if a 0 was actually passed in or not. Using a pointer allows to
+check for a nil value before doing the validation and lets you have optional json parameters.
+
+Basic Struct Example.
+
+    var Register struct {
+        Username *string `json:"username" validate:"required"`
+        Password *string `json:"password" validate:"required"`
+        Email    *string `json:"email" validate:"required|email"`
+        Notify   *string `json:"notify" validate:"required|in:yes,no"`
+    }
+
+Normal Use Case.
+
+    if err := val.Bind(r.Body, &Register); err != nil {
+        fmt.Println(err)
+    }
+
+*/
+
 package val
 
 import (
@@ -12,8 +37,8 @@ import (
 	"strings"
 )
 
-// Unpack JSON and call the validate function if no
-// errors are found when unpacking it.
+// Unpack JSON and call the validate function if no errors are found when unpacking it.
+// Bind kicks of the validation process. Note that Request.Body impliments an io.ReadCloser.
 // Look into ReadAll http://jmoiron.net/blog/crossing-streams-a-love-letter-to-ioreader/
 func Bind(input io.ReadCloser, obj interface{}) error {
 	// Don't go through any logic if nothing was passed in.
@@ -33,6 +58,8 @@ func Bind(input io.ReadCloser, obj interface{}) error {
 	}
 }
 
+// In version 1.0 I exported the Validation function. This can be used when you may
+// not need to or want to have JSON first converted into a struct.
 func Validate(obj interface{}) error {
 
 	typ := reflect.TypeOf(obj)
