@@ -79,6 +79,8 @@ val length between test took: 713.4889ms to run.
 
 ```
 
+To get an idea of where this sits in regards to other validation. In PHP using laravel for this same type of validation it will take you 13+ seconds to run 'val general test' and 10+ seconds to run the required tests for the same number of iterations.
+
 ## Currently Supported Validation
 
 #### required
