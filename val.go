@@ -120,6 +120,22 @@ func Validate(obj interface{}) error {
 					if err := regex(`regex:^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`, fieldValue); err != nil {
 						return err
 					}
+				case "url" == match:
+					if err := regex(`regex:/^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/`, fieldValue); err != nil {
+						return err
+					}
+				case "alpha" == match:
+					if err := regex(`regex:\p{L}`, fieldValue); err != nil {
+						return err
+					}
+				case "alphadash" == match:
+					if err := regex(`regex:^[a-zA-Z0-9_]*$`, fieldValue); err != nil {
+						return err
+					}
+				case "alphanumeric" == match:
+					if err := regex(`regex:/[0-9a-zA-Z]/`, fieldValue); err != nil {
+						return err
+					}
 				case strings.HasPrefix(match, "min:"):
 					if err := min(match, fieldValue); err != nil {
 						return err
